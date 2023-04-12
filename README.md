@@ -20,3 +20,40 @@
 3. go run main.go
 
 # 测试结果
+
+测试环境：腾讯云 CVM， CPU型号：Intel(R) Xeon(R) Platinum 8255C CPU @ 2.50GHz
+
+```
+~/bsonjson$ go run main.go
+TestIteration: 100000
+
+
+--Test double--
+bsonBytes length = 126
+jsonBytes length = 161
+bson marshal total time(us): 137548
+json marshal total time(us): 162248
+bson unmarshal total time(us): 198119
+json unmarshal total time(us): 388782
+
+
+--Test string--
+bsonBytes length = 1266
+jsonBytes length = 1252
+bson marshal total time(us): 180113
+json marshal total time(us): 268086
+bson unmarshal total time(us): 273701
+json unmarshal total time(us): 979400
+```
+
+## 总结
+### 1. 存储空间（长度）效率
+对于测试使用的 “长” double 类型，BSON 的空间有一定优势。因为 BSON 使用固定字节进行编码。
+
+对于测试使用的 string 类型，BSON 并没有优势。
+
+### 2. 编码（marshal）效率
+对于测试使用的 “长” double 类型和 string 类型， BSON 均有10%-30% 的性能提升。
+
+### 3. 解码（unmarshal）效率
+BSON 优势非常明显。对于测试使用的 “长” double 类型有 100% 的性能提升，对于 string 类型有 200% 以上的性能提升。
