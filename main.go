@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"runtime/pprof"
 	"time"
@@ -87,7 +88,95 @@ func testString() {
 
 }
 
-func testDouble() {
+func testInt64(isShort bool) {
+	type int64Struct struct {
+		L1  int64
+		L2  int64
+		L3  int64
+		L4  int64
+		L5  int64
+		L6  int64
+		L7  int64
+		L8  int64
+		L9  int64
+		L10 int64
+	}
+	var LS int64Struct
+	if isShort {
+		LS = int64Struct{
+			L1:  1,
+			L2:  2,
+			L3:  3,
+			L4:  4,
+			L5:  5,
+			L6:  6,
+			L7:  7,
+			L8:  8,
+			L9:  9,
+			L10: 0,
+		}
+	} else {
+		// maxInt64: 9223372036854775807, 19位
+		LS = int64Struct{
+			L1:  math.MaxInt64,
+			L2:  math.MaxInt64,
+			L3:  math.MaxInt64,
+			L4:  math.MaxInt64,
+			L5:  math.MaxInt64,
+			L6:  math.MaxInt64,
+			L7:  math.MaxInt64,
+			L8:  math.MaxInt64,
+			L9:  math.MaxInt64,
+			L10: math.MaxInt64,
+		}
+	}
+
+	bsonBytes, err := bson.Marshal(LS)
+	if err != nil {
+		fmt.Printf("bson marshal failed: %v\n", err)
+		return
+	}
+	jsonBytes, err := json.Marshal(LS)
+	if err != nil {
+		fmt.Printf("json marshal failed: %v\n", err)
+		return
+	}
+	fmt.Printf("bsonBytes length = %d\njsonBytes length = %d\n",
+		len(bsonBytes), len(jsonBytes))
+
+	// Marshal bson
+	t1 := time.Now().UnixNano()
+	for i := 0; i < TestIteration; i++ {
+		bson.Marshal(LS)
+	}
+
+	// Marshal json
+	t2 := time.Now().UnixNano()
+	for i := 0; i < TestIteration; i++ {
+		json.Marshal(LS)
+	}
+
+	// Unmarshal bson
+	t3 := time.Now().UnixNano()
+	for i := 0; i < TestIteration; i++ {
+		_ = bson.Unmarshal(bsonBytes, &LS)
+	}
+
+	// Unmarshal json
+	t4 := time.Now().UnixNano()
+	for i := 0; i < TestIteration; i++ {
+		_ = json.Unmarshal(jsonBytes, &LS)
+	}
+
+	t5 := time.Now().UnixNano()
+
+	fmt.Printf("bson marshal total time(us): %v\n", (t2-t1)/1000)
+	fmt.Printf("json marshal total time(us): %v\n", (t3-t2)/1000)
+	fmt.Printf("bson unmarshal total time(us): %v\n", (t4-t3)/1000)
+	fmt.Printf("json unmarshal total time(us): %v\n", (t5-t4)/1000)
+}
+
+func testDouble(isShort bool) {
 	type doubleStruct struct {
 		D1  float64
 		D2  float64
@@ -100,17 +189,34 @@ func testDouble() {
 		D9  float64
 		D10 float64
 	}
-	DS := doubleStruct{
-		D1:  123456789.0,
-		D2:  1234567.89,
-		D3:  123456.789,
-		D4:  12345.6789,
-		D5:  1234.56789,
-		D6:  123.456789,
-		D7:  12.3456789,
-		D8:  1.23456789,
-		D9:  0.123456789,
-		D10: 123456789.0,
+	var DS doubleStruct
+	if isShort {
+		DS = doubleStruct{
+			D1:  1,
+			D2:  2,
+			D3:  3,
+			D4:  4,
+			D5:  5,
+			D6:  6,
+			D7:  7,
+			D8:  8,
+			D9:  9,
+			D10: 10,
+		}
+	} else {
+		// MaxFloat64: 1.79769313486231570814527423731704356798070e+308
+		DS = doubleStruct{
+			D1:  math.MaxFloat64,
+			D2:  math.MaxFloat64,
+			D3:  math.MaxFloat64,
+			D4:  math.MaxFloat64,
+			D5:  math.MaxFloat64,
+			D6:  math.MaxFloat64,
+			D7:  math.MaxFloat64,
+			D8:  math.MaxFloat64,
+			D9:  math.MaxFloat64,
+			D10: math.MaxFloat64,
+		}
 	}
 
 	bsonBytes, err := bson.Marshal(DS)
@@ -123,6 +229,7 @@ func testDouble() {
 		fmt.Printf("json marshal failed: %v\n", err)
 		return
 	}
+	//fmt.Printf("jsonBytes: %s\n", string(jsonBytes))
 	fmt.Printf("bsonBytes length = %d\njsonBytes length = %d\n",
 		len(bsonBytes), len(jsonBytes))
 
@@ -176,8 +283,17 @@ func main() {
 		_ = fileHandler.Close()
 	}()
 
-	fmt.Println("\n\n--Test double--")
-	testDouble()
+	fmt.Println("\n\n--Test double short--")
+	testDouble(true)
+
+	fmt.Println("\n\n--Test double long--")
+	testDouble(false)
+
+	fmt.Println("\n\n--Test int64 short--")
+	testInt64(true)
+
+	fmt.Println("\n\n--Test int64 long--")
+	testInt64(false)
 
 	fmt.Println("\n\n--Test string--")
 	testString()
